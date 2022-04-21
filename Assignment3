@@ -1,0 +1,308 @@
+use schoolschedulingexample;
+
+-- Q1 The number of Art major students.
+
+
+
+Select M.Major,Count(S.StudentID) AS 'Count of Art Major Students'
+from students S inner join Majors M
+ON S.studmajor=M.MajorID
+Where M.Major='Art';
+
+-- Q2 List faculties who don't teach any classes. 
+
+select faculty.* 
+from faculty  
+where staffid not in ( select distinct staffid from faculty_classes);
+
+
+-- Q3 List classes that are held in classrooms in buildings with access to the elevator. 
+
+Select distinct C.ClassID,B.BuildingName,B.ElevatorAccess
+from ((classes C inner join Class_rooms CR
+ON C.ClassRoomID=CR.ClassRoomID) inner join Buildings B
+ON CR.BuildingCode=B.BuildingCode)
+Where ElevatorAccess=1
+Group by C.ClassID;
+
+-- Q4 Show the list of students who have not registered for any class. 
+
+
+select distinct s.studentid  from students as s inner join student_schedules as sc
+on s.studentid = sc.studentid
+where s.studentid not in ( select distinct studentid from student_schedules where ClassStatus =1)
+group by s.studentid , ClassStatus
+order by ClassStatus desc;
+
+
+
+
+
+-- Q5 Show the student (including major) with the highest GPA.
+
+
+Drop view if exists grading;
+Create view  Grading AS
+(Select A.StudentID,B.studmajor, (Select avg(Grade) from Student_schedules C where C.StudentID=A.StudentID) AS 'Avg_Grade'
+from student_schedules A inner join Students B
+On A.StudentID=B.StudentID
+Group by A.StudentID);
+
+Select *
+from grading 
+where Avg_Grade = (Select Max(Avg_Grade) from grading);
+
+
+
+
+
+
+
+
+
+
+
+
+-- Q6 List classes taught by faculties/instructors that the faculty is proficient,i.e.,
+
+select distinct c.classid , f.staffid, fs.ProficiencyRating 
+from classes c left join subjects s 
+on c.subjectid = s.subjectid
+left join faculty_subjects fs 
+on s.subjectid = fs.subjectid
+left join faculty f 
+on fs.staffid = f.staffid
+where fs.ProficiencyRating = 10
+group by f.staffid
+;
+
+
+
+
+
+select fc.classid , fc.staffid , fs.PROFICIENCYRATING from faculty_classes fc inner join classes c 
+on fc.classid = c.classid
+inner join subjects s 
+on s.subjectid = c.subjectid inner join faculty_subjects fs 
+on fs.subjectid = s.subjectid inner join faculty f 
+on f.staffid = fs.staffid
+-- on fc.staffid = fs.staffid and c.subjectid = fs.subjectid
+where fs.PROFICIENCYRATING =10
+group by f.staffid;
+
+
+
+
+
+
+
+
+
+
+select fc.classid , fc.staffid , fs.PROFICIENCYRATING from faculty_classes fc inner join classes c 
+on fc.classid = c.classid
+inner join faculty_subjects fs 
+on fc.staffid = fs.staffid and c.subjectid = fs.subjectid
+where fs.PROFICIENCYRATING =10;
+
+
+
+
+
+
+-- Q7  Show the top student(s) (the one with the highest GPA) of each major
+
+
+(select s.studentid , m.major, (select avg(grade) from student_schedules where s.studentid = sc.studentid) as 'AVG1'
+from student_schedules sc inner join students s 
+on sc.studentid = s.studentid
+inner join majors m 
+on s.studmajor = m.majorid
+where AVG1 = (select max(AVG1) from student_schedules sc where sc.studentid = s.studentid)
+group by s.studentid, m.major);
+
+
+
+
+
+drop view if exists avgr;
+create view avgr as
+select s.studentid , m.major, (select avg(grade) from student_schedules sc where s.studentid = sc.studentid) as 'AVG1'
+from student_schedules sc inner join students s 
+on sc.studentid = s.studentid
+inner join majors m 
+on s.studmajor = m.majorid
+group by s.studentid;
+
+select *
+from avgr i
+where AVG1 = ( select max(avg1) from AVGr y where i.studentid = y.studentid) 
+order by avg1 desc
+limit 1;
+
+
+
+
+
+
+
+
+Create view  StudentGrading AS
+(Select A.StudentID,B.studmajor, (Select avg(Grade) from Student_schedules C where C.StudentID=A.StudentID) AS 'Avg_Grade'
+from student_schedules A inner join Students B
+On A.StudentID=B.StudentID
+Group by A.StudentID);
+
+
+
+Select *
+From StudentGrading A
+where Avg_Grade = (select MAX(Avg_Grade) from StudentGrading B where B.StudMajor=A.StudMajor group by B.Studmajor)
+order by A.studentid;
+
+
+
+
+
+-- Q8 List students who are taking a course(s) and its prerequisite(s) at the same time.
+
+select distinct s.studentid , c.classid, sb.SubjectPreReq
+from students as s inner join student_schedules as sc 
+on s.studentid = sc.studentid
+inner join classes as c 
+on sc.classid = c.classid
+inner join subjects as sb
+on c.subjectid = sb.subjectid
+where sb.SubjectPreReq is not null
+group by s.studentid ;
+
+
+drop view if exists newcolumn;
+create view NewColumn  as
+(select s.studentid, c.classid, sc.subjectcode, sc.SubjectPreReq
+from student_schedules as s left join classes c 
+on s.classid = c.classid left join subjects sc 
+on c.subjectid = sc.subjectid);
+
+
+
+select distinct studentid , subjectcode, SubjectPreReq from NewColumn H where subjectcode in ( select SubjectPreReq from  NewColumn j where j.studentid = H.studentid);
+
+
+
+-- Q9 List the earliest class (in terms of starting time) of each instructor.
+select f.staffid, starttime
+from faculty f inner join faculty_classes fc 
+on f.staffid = fc.staffid
+inner join classes c 
+on c.classid = fc.classid
+where starttime = ( select min(starttime) from classes c where f.staffid = fc.staffid)  as 'Early'
+group starttime;
+
+
+drop view if exists tokyo;
+
+create view tokyo as
+select f.staffid, starttime, f.title
+from faculty f inner join faculty_classes fc 
+on f.staffid = fc.staffid
+inner join classes c 
+on c.classid = fc.classid
+where f.title = 'instructor'
+group by starttime;
+
+
+
+select * from tokyo u
+where starttime = (select min(starttime) from tokyo as k where k.staffid = u.staffid)
+order by starttime asc
+limit 1;
+
+
+select distinct k.staffid, (select min(starttime) from Newview n where n.staffid = k.staffid) as The_Min ,title from Newview k
+where title = 'instructor'
+-- order by staffid
+order by starttime asc
+limit 1
+;
+
+
+
+
+
+
+
+
+create view Newview as (
+select fc.classid , fc.staffid, c.starttime, f.title
+from (faculty_classes fc left join classes c on fc.classid = c.classid)
+left join faculty f on f.staffid = fc.staffid
+order by staffid);
+
+select distinct k.staffid, (select min(starttime) from Newview n where n.staffid = k.staffid) as The_Min ,title from Newview k
+where title = 'instructor'
+-- order by staffid
+order by starttime asc
+limit 1
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Q10 Find the department chair that teaches the highest number of classes among other department heads.
+
+
+drop view if exists counting;
+create view counting as
+select d.deptchair, count(c.classid) as 'Total'
+from departments d inner join staff s 
+on d.deptchair = s.staffid inner join faculty_classes fc
+on s.staffid = fc.staffid inner join classes c
+on c.classid = fc.classid
+-- where total = (select max(total) from counting where z.staffid = e.staffid)
+group by deptchair;
+
+select deptchair, max(total) from counting ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+create view chairview as (
+select DepartmentID, DeptName, DeptChair, concat(StfFirstName, ' ' , StfLastname) as completeName , classid
+from departments d left join staff s on d.DeptChair = s.staffid inner join 
+faculty_classes fc on s.staffid = fc.staffid );
+
+select * 
+from (select distinct DeptName, DeptChair, completeName, (select count(*) 
+			                                                       from chairview cv 
+                                                                   where cv.DeptChair = cvc.DeptChair) as classescounts
+	 from chairview cvc
+     order by classescounts desc) as m 
+limit 1; 
+
+
+
+
+
+
+
+
