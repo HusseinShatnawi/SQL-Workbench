@@ -1,0 +1,66 @@
+use schoolschedulingexample;
+
+
+-- Q1 first and last names of secretaries. -----> answer
+
+select concat(StfFirstName, ' ' , StfLastname) as SecretaryName from staff where Position = 'Secretary';
+
+-- Q2 first name of all employees where their last name starts with the letter S.   -----------> answer
+
+select StfFirstName from staff where StfLastname like('S%');
+
+-- Q3 first name, last name, and complete address under a column of staff with salaries between $50000 and $60000. The query should return three columns.  -----> answer
+
+select StfFirstName, StfLastname, concat(StfStreetAddress, ' ', StfCity, ' ' , StfState, ' ' , StfZipCode, ' ', StfAreaCode) as CompletAddress
+from staff where Salary between 50000 and 60000; 
+ 
+ 
+ --  Q4    address of the employee with StaffID 98042 -------------------> answer
+ 
+ 
+ select concat(StfStreetAddress, ' ', StfCity, ' ' , StfState, ' ' , StfZipCode, ' ', StfAreaCode) as EmpolyeeAdress from staff where staffid = 98042;
+ 
+ 
+ -- Q5   list of courses (subjects) with pre-requisites. ------------------> answer 
+ 
+ select * from subjects where SubjectPreReq is not null;
+ 
+ 
+ 
+ -- Q6   list of buildings with access to the parking and elevators. -------------------> answer
+ 
+ 
+ select * from buildings where ElevatorAccess <> 0 and SiteParkingAvailable <> 0 ; 
+ 
+ 
+ -- Q7   list of students that the length of their first name is less than 6 characters and born in 1994. ----------------> answer
+ 
+ 
+ select * from students where year(StudBirthDate) = 1994 and length(StudFirstName) < 6 ;
+ 
+ 
+ 
+ -- Q8 list of female students from TX and male students from OR. -----------> answer
+ 
+ 
+  select * from students where (StudGender = 'f' and StudState = 'tx') or (StudGender = 'm' and StudState = 'or');
+ 
+ 
+ 
+ 
+ -- Q9   list of weekday morning classes (Monday - Friday classes that start at or before 11:00:00). --------------> answer
+ 
+ select ClassID, SubjectID, ClassRoomID, Credits, SemesterNumber, StartDate, StartTime, Duration, MondaySchedule, TuesdaySchedule, WednesdaySchedule, ThursdaySchedule, FridaySchedule 
+ from classes where SaturdaySchedule = 0 and StartTime <= time('11:00:00');
+ 
+ 
+ 
+ -- Q10 list of students who have classes in the classrooms with classID of 1500,1502,4180.  -------------> answer
+ 
+ 
+ select distinct StudentID, ClassID from student_schedules where classid in (1500,1502, 4180);
+ 
+ -- OR
+ 
+ select StudentID, ClassID from student_schedules where ClassID = 1500 or ClassID= 1502 or ClassID= 4180; 
+ 
