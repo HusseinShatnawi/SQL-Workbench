@@ -1,0 +1,248 @@
+use schoolschedulingexample ;
+
+
+-- Q1 Show the number of classes taught by each faculty.
+
+
+select count(c.classid) as 'number of classes', f.staffid
+from faculty f inner join faculty_classes fc
+on f.staffid = fc.staffid inner join classes c
+on c.classid = fc.classid
+group by f.staffid;
+
+
+
+
+-- Q2 Show the total number of credit hours completed by each student.
+
+
+select s.studentid, sum(Credits) 
+from students s inner join student_schedules sc 
+on s.studentid = sc.studentid
+inner join classes c 
+on sc.classid = c.classid
+where sc.ClassStatus = 1
+group by s.StudentID;
+
+
+
+
+
+
+
+-- Q3 Show the number of morning classes taught during weekdays (exclude classes taught on Saturday).
+
+select count(c.classid)
+from classes c inner join faculty_classes fc 
+on c.classid = fc.classid 
+inner join faculty f 
+on fc.staffid = f.staffid
+where (MondaySchedule = 1 or TuesdaySchedule = 1 or WednesdaySchedule =1 or ThursdaySchedule =1 or FridaySchedule =1) and starttime < '12:00:00';
+
+
+
+
+
+
+
+
+
+-- Q4 Show the number of students per major.   
+
+
+select count(StudentID), StudMajor
+from students s inner join majors m
+on s.studmajor = m.majorid
+group by studmajor;
+
+
+
+
+
+
+-- Q5 Show the number of afternoon classes taught in each building. 
+
+select count(classid),b.BuildingName
+from classes c left join class_rooms cr 
+on c.ClassRoomID = cr.ClassRoomID
+left join buildings b 
+on cr.BuildingCode = b.BuildingCode
+where starttime >= '12:00:00'
+group by b.BuildingName; 
+
+
+
+
+-- Q6 Show the number of tenured faculties in each department.
+
+drop view if exists TenFact;
+create view TenFact as
+select d.DepartmentID, d.deptname, f.staffid, f.tenured
+from departments as d left join categories as c
+on d.departmentid = c.departmentid left join faculty_categories as fc 
+on c.CategoryID = fc.CategoryID
+left join faculty f 
+on fc.staffid = f.staffid
+where f.tenured = 1
+group by d.DepartmentID, f.staffid
+order by d.DepartmentID;
+
+select DepartmentID, count(staffid) from TenFact 
+group by DepartmentID;
+
+ 
+
+
+
+
+
+
+
+
+-- Q7 Write a query to show students' performances as pass/fail based on their grades.
+-- If the grade is 60 and above, the student passes the class, otherwise, they fail.
+
+
+select s.studentid, c.classid, sc.grade, s.studmajor,
+case when sc.grade > 60 then 'Pass'
+else 'Fail'
+end as 'The Performance'
+from students s left join student_schedules sc
+on s.studentid = sc.studentid
+left join classes c 
+on sc.classid = c.classid
+where sc.classStatus = 2 ;
+
+
+
+
+
+
+-- Q8 Write a query to show for each staff whether the person is a department chair or not.
+
+select s.staffid, s.Position , d.deptname, 
+case when 
+d.deptchair = s.staffid then 'Yes'
+else 'NO'
+end as Deptchair_YES_NO
+from staff s left join departments d 
+on s.staffid = d.deptchair;
+
+
+
+
+
+-- Q9 Is the number of students with art majors more than students with English majors? Answer with Yes/No.
+
+
+select case when
+(select count(studentid) from students s where studmajor = 6) > ( select count(studentid) from students s where studmajor = 2) then 'Yes'
+else 'NO'
+end as 'Art more than english';
+
+
+
+-- They are equal since both have 3 students. This script shows the number od students 
+
+select count(studentid) as totalnumber, studmajor 
+from students as s left join majors m 
+on s.studmajor = m.majorid
+where studmajor = 2 or studmajor = 6 
+group by studmajor;
+
+
+
+
+-- Q10 Increase the salary of full professors by 10%, associate professors by 5%, Instructor by 3%, and the rest of staff by 1%.
+
+
+start transaction ;
+SET SQL_SAFE_Updates = 0;
+
+update staff 
+set salary = (case
+	when staffid in (select staffid from faculty f where title = 'Professor')
+    then 1.1 * salary
+	
+    When staffid in (select staffid from faculty f where title = 'Associate Professor') 
+    then 1.05 * salary
+    
+    
+    when staffid in (select staffid from faculty f where title = 'Instructor') 
+    then staff.salary * 1.03
+    
+    
+else staff.salary * 1.01 
+end ) ;
+    
+    
+    
+rollback ; 
+
+
+
+
+
+
+
+
+
+
+-- Q11 Is there any student that take only morning classes without taking any afternoon class? Answer with Yes/No.
+
+
+drop view if exists morningstudents;
+Create view morningstudents AS
+Select S.StudentID, max(StartTime) AS 'lateclass'
+from student_schedules S inner join classes C
+ON S.CLassID = C.ClassID
+where s.classstatus=1
+group by S.StudentID;
+
+Select if((Select studentID from morningstudents where lateclass <'12:00'),'Yes','No');
+
+
+
+
+-- Q 12 The following student has applied for the school and has been admitted, and the detail of the student is as follows.
+
+--  12.1. add the student to the table of Students.
+start transaction; 
+
+insert into students (studentid, studfirstname, studlastname, studstreetaddress, StudCity, StudState, StudZipCode, StudAreaCode)
+values( 1020, 'Joe', 'Rock', '123 Main St', 'Dallas', 'WA', '75032', '206');
+
+rollback; 
+-- 12.2. Student contacted the registrar's office and provided his phone number. His phone number is 123-459.
+
+
+start transaction;
+set sql_safe_updates = 0 ;
+
+update Students
+set StudPhoneNumber = '123-459'
+where StudentID = 1020;
+
+
+rollback ; 
+
+-- 12.3. The registrar officer noticed there is a typo in the student's record. The StudState should be 'TX'. Write a SQL statement to fix this typo.
+
+start transaction ;
+update students
+set StudState = 'Tx'
+where studentid = 1020;
+
+rollback;
+
+
+
+
+
+
+
+
+
+
+
+
