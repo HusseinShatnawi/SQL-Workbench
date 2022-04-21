@@ -1,0 +1,153 @@
+
+use schoolschedulingexample;
+
+
+
+
+-- Q1 Show the list of classes taught by instructors. 
+
+
+
+select * from classes as c inner join faculty_classes as fc 
+on c.classid = fc.classid inner join faculty as f 
+on fc.staffid = f.staffid
+where f.Title = 'instructor';
+
+
+
+
+
+-- Q2  show the list of students with FridaySchedule
+
+select distinct s.*, c.FridaySchedule from students as s left join student_schedules as ss
+on s.studentid = ss.studentid left join classes as c 
+on ss.classid = c.classid 
+where c.FridaySchedule = 1 ;
+
+-- Another Solution:
+
+Select distinct Students.* from Students , Student_Schedules , classes 
+where classes.FridaySchedule = 1 ;
+
+-- Another Solution :
+
+select distinct s.*, c.fridayschedule from students as s inner join student_schedules as ss
+on s.studentid = ss. studentid inner join classes as c 
+on ss.classid = c.classid
+where c.fridayschedule = 1;
+
+
+
+
+
+
+
+-- Q3 Detailed information of department chairs including First name, last name, datehired, and salary.
+ 
+ 
+select st.StfFirstName, st.StfLastname, st.DateHired, st.salary, d.deptName,st.staffid from staff as st inner join departments as d
+on st.staffid = d.deptchair
+where d.deptchair is not null;
+
+-- Another Solution 
+select st.StfFirstName, st.StfLastname, st.DateHired, st.salary, d.deptName from staff as st right join departments as d 
+on st.staffid = d.deptchair
+where d.deptchair is not null;
+
+
+
+
+
+
+
+
+-- Q4 List of students taking both BUS 101 and BUS 171 (BUS is a subject code).
+
+
+
+
+select * from students as s, student_schedules as sc, classes as c, subjects as sub
+where s.studentid =sc.studentid and sc.classid = c.classid and c.subjectid = sub.subjectid and sub.subjectcode in ('BUS 101', 'BUS 171 ');
+
+-- Another way to make the condition clause:  and SubjectCode = 'BUS 101' and subjectcode = 'BUS 171';
+
+
+
+
+-- Q5 List of faculties who have class in Calssroom 1231 (classroomid).
+
+select distinct f.* , c.classroomid from faculty as f, faculty_classes as fc, classes as c
+where f.staffid = fc.staffid and fc.classid = c.classid and c.classroomid = 1231;
+
+
+
+
+
+
+-- Q6 Show the list of faculty who don't teach any class at all 
+
+select * from faculty as f left join faculty_classes as fc 
+on f.staffid= fc.staffid left join classes as c on 
+fc.classid = c.classid
+where c.classid is null; 
+
+
+
+
+-- Q7 Show the list of students who have not registered for any classes. 
+
+
+select * from students as s left join student_schedules as sc 
+on s.studentid = sc.studentid left join classes as c on sc.classid = c.classid
+where c.ClassID is null;
+
+
+
+
+
+
+
+
+
+-- Q8 List afternoon classes taught by instructors. (start time of the class is on or after 12:00:00)
+
+
+
+select distinct * from classes as c inner join faculty_classes as fc 
+on c.classid = fc.classid inner join faculty as f 
+on fc.staffid = f.staffid
+where f.staffid is not null and f.title = 'instructor' and c.StartTime >= '12:00:00';
+
+
+
+
+
+
+
+-- Q9 List of staff who are not faculty. 
+
+select * from staff as st left join faculty as f 
+on st.staffid = f.staffid 
+where f.staffid is null;
+
+
+
+
+-- Q10 List of faculty from the Science department.
+
+select * from faculty as f left join faculty_categories as fc 
+on f.staffid = fc.staffid left join categories as c 
+on fc.categoryid = c.categoryid left join departments as d 
+on c.departmentid = d.departmentid 
+where deptname like 'Science%';
+
+-- If Social Science is considered in the Sceince department then the solution will be :
+
+select * from faculty as f left join faculty_categories as fc 
+on f.staffid = fc.staffid left join categories as c 
+on fc.categoryid = c.categoryid left join departments as d 
+on c.departmentid = d.departmentid 
+where deptname like '%Science%';
+
+
+
