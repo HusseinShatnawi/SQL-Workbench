@@ -1,0 +1,239 @@
+ -- Final Exam Answers For Database Management
+ -- Student Name : Hussein Mohammed Shatnawi
+
+ -- Spring Semester 2022
+
+use entertainmentagencyexample ;
+
+
+
+
+
+-- Q1) Show first name, last name, phone number, and full address of customers (return total 4 columns)
+
+select CustFirstName, CustLastName, CustPhoneNumber, concat(CustStreetAddress, ' ',CustCity, ' ',CustState, ' ', CustZipCode ) as FullAddress
+from customers;
+
+
+
+
+
+-- Q2) Find customers who like Standards but not Jazz.
+
+
+select * from musical_preferences mf left join musical_styles ms
+on mf.styleid = ms.styleid
+where mf.customerid in ( select customerid from musical_preferences where styleid = 21) 
+group by mf.customerid
+having ms.styleid <> 15;
+
+ 
+
+
+-- Another Solution :
+
+
+
+SELECT        CustomerID, CustFirstName, CustLastName
+FROM            Customers
+WHERE        (1 = (CASE WHEN CustomerID NOT IN
+                             (SELECT        CustomerID
+                               FROM            Musical_Preferences INNER JOIN Musical_Styles 
+                                               ON Musical_Preferences.StyleID = Musical_Styles.StyleID
+                               WHERE        Musical_Styles.StyleName = 'Standards') 
+                   THEN 0 
+                   WHEN CustomerID IN
+                             (SELECT        CustomerID
+                               FROM            Musical_Preferences INNER JOIN Musical_Styles 
+                                               ON Musical_Preferences.StyleID = Musical_Styles.StyleID
+                               WHERE        Musical_Styles.StyleName = 'Jazz') 
+                   THEN 0 ELSE 1 END));
+
+
+
+
+
+
+
+-- Q3) Show the entertainers who have no booking.
+
+select * from entertainers e left join engagements eg
+on eg.EntertainerID = e.EntertainerID
+where EngagementNumber is null; 
+
+
+
+
+-- Q4)  Show agents who have never booked a Country or Country Rock group.
+
+
+SELECT Agents.AgentID, Agents.AgtFirstName, Agents.AgtLastName
+FROM Agents
+WHERE Agents.AgentID NOT IN 
+(SELECT Engagements.AgentID 
+FROM ((Engagements
+INNER JOIN Entertainers 
+ON Engagements.EntertainerID = Entertainers.EntertainerID) 
+INNER JOIN Entertainer_Styles 
+ON Entertainers.EntertainerID = Entertainer_Styles.EntertainerID) 
+INNER JOIN Musical_Styles 
+ON Entertainer_Styles.StyleID = Musical_Styles.StyleID
+WHERE Musical_Styles.StyleName IN ('Country', 'Country Rock'));
+
+
+
+
+
+
+
+-- Q5 ) List the entertainers who played engagement for either customers Berg or Hallmark.
+
+
+select distinct e.EntertainerID ,c.CustLastName from entertainers e inner join engagements en 
+on e.EntertainerID = en.EntertainerID inner join customers c
+on c.customerid = en.customerid 
+where CustLastName = 'Berg' or Custlastname = 'Hallmark'
+group by EntertainerID;
+
+
+
+
+-- Q6) Delete musical styles that aren’t played by any entertainer.
+
+/*
+-- This code to show the musical styles that aren't played 
+*/
+select * from musical_styles ms left join entertainer_styles es
+on ms.styleid = es.styleid left join entertainers e 
+on es.EntertainerID = e.EntertainerID
+where e.EntertainerID is null;
+     
+
+-- This code for deletion 
+
+set sql_safe_updates = 0 ;
+start transaction ;
+delete from musical_styles
+where styleid in 
+
+( select ms.StyleID from musical_styles ms left join entertainer_styles es
+on ms.styleid = es.styleid left join entertainers e 
+on es.EntertainerID = e.EntertainerID
+where e.EntertainerID is null);
+
+rollback ; 
+
+
+
+
+-- Another Answer :
+
+start transaction;
+Delete from Musical_Styles where StyleID NOT IN
+( Select StyleID from Entertainer_Styles inner join Entertainers on Entertainer_Styles.EntertainerID = Entertainers.EntertainerID);
+
+rollback ;
+
+
+
+
+
+
+
+-- Q 7 ) Add five percent to the salary of agents.
+
+start transaction ;
+update agents
+set salary = 1.05* salary ;
+rollback ; 
+
+
+
+-- Q8) Show the entertainers who have more than two overlapped bookings.
+
+
+select
+    Ent.EntertainerID,
+    Ent.EntStageName
+from
+    Entertainers Ent
+where
+    Ent.EntertainerID in
+    (
+        select
+            E1.EntertainerID
+        from
+            Engagements E1
+        inner join
+            Engagements E2
+            on E1.EntertainerID = E2.EntertainerID
+        where
+            E1.EngagementNumber <> E2.EngagementNumber
+            and
+            E1.StartDate <= E2.EndDate
+            and
+            E2.Startdate <= E1.EndDate
+        group by
+            E1.EntertainerID
+        order by
+            count(*) >= 2
+    );
+
+
+
+
+
+
+
+
+
+
+
+
+-- Q9) List customers who have booked entertainers who play country or country rock or classical
+
+
+select * from customers c  left join engagements e 
+on c.customerid = e.customerid left join entertainers et
+on e.EntertainerID = et.EntertainerID left join entertainer_styles es
+on et.EntertainerID = es.EntertainerID left join musical_styles ms
+on ms.styleid = es.styleid
+where StyleName = 'country'  or stylename = 'country rock' or stylename = 'classical'
+group by c.customerid ;
+
+
+
+
+
+
+
+-- Q 10) Show all entertainers and the number (count) of each entertainer’s engagement.  
+
+
+
+
+
+select e.EntertainerID, count(eg.EngagementNumber)
+from engagements eg right join entertainers e 
+on e.Entertainerid = eg.EntertainerID
+group by e.EntertainerID;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
