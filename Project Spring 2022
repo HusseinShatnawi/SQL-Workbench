@@ -1,0 +1,433 @@
+
+
+-- Hussein Mohammed Shatnawi
+-- 50305640
+-- Project answers 
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*Question 1.
+ Create a database named “EMPLOYEE INFO” based on the following ERD. Recall that this 
+is ERD and you need to convert it to relational model and then normalize it before implementing in SQL. 
+Please show your normalized relational model. Also, make sure that you are using correct data type for 
+each attribute. 2. Enter at least five records for each table */
+
+
+create database EMPLOYEEINFO ; 
+
+use EMPLOYEEINFO;
+
+
+
+drop table if exists Employee ;
+create table Employee (
+Employeeid int not null  primary key  auto_increment,
+EmployeeFirstName  varchar(255),
+EmployeeLastName   varchar(255)  
+);
+
+
+ drop table if exists course; 
+create table course (
+courseid int not null  primary key auto_increment,
+coursetitle  varchar(255)
+
+);
+
+
+
+drop table if exists certificate;
+create table certificate (
+Employee_id int  ,
+Course_Id int 
+ 
+ );
+
+
+ 
+ 
+ drop table if exists Supervisers;
+create table Supervisers (
+SupervisedEmployeeId int not null primary key ,
+
+Suprviserid int   
+
+
+);
+ 
+ 
+ 
+ -- Now Adding the Constraints :
+ 
+ -- Certificate Table :
+ 
+alter table certificate
+add constraint Fk_certificate foreign key(course_Id) references Course(courseid), 
+add constraint FK_Certificates FOREIGN KEY(Employee_id) REFERENCES Employee(Employeeid),
+add constraint PK_Certificates primary key(employee_id, Course_id);
+
+
+alter table Supervisers
+add constraint FK_Supervisers FOREIGN KEY(Suprviserid) REFERENCES Employee(EmployeeId),
+add constraint FK_Supervisers2 FOREIGN KEY(SupervisedEmployeeId) REFERENCES Employee(EmployeeId);
+ 
+ 
+ 
+ 
+
+
+-- Now inserting the values :
+
+
+
+
+
+insert into Employee ( EmployeeFirstName, EmployeeLastName)
+values('Hussein', 'Shatnawi');
+
+insert into Employee ( EmployeeFirstName, EmployeeLastName)
+values('John', 'Alex');
+
+insert into Employee (EmployeeFirstName, EmployeeLastName)
+values('Peter', 'Rusel');
+
+insert into Employee (EmployeeFirstName, EmployeeLastName)
+values('David', 'Josef');
+
+insert into Employee (EmployeeFirstName, EmployeeLastName)
+values('Michael', 'McCarty');
+
+
+
+
+
+insert into course (coursetitle)
+values('Coaching');
+
+insert into course ( coursetitle)
+values('Swimming');
+
+insert into course ( coursetitle)
+values('Health Care');
+
+insert into course ( coursetitle)
+values('Coding');
+
+insert into course ( coursetitle)
+values('Driving');
+
+
+
+
+
+
+
+
+insert into Supervisers (SupervisedEmployeeId, Suprviserid)
+values(1,null);
+
+insert into Supervisers (SupervisedEmployeeId, Suprviserid)
+values(2,1);
+
+insert into Supervisers (SupervisedEmployeeId, Suprviserid)
+values(3,5);
+
+insert into Supervisers (SupervisedEmployeeId, Suprviserid)
+values(4,1);
+
+insert into Supervisers (SupervisedEmployeeId, Suprviserid)
+values(5,null);
+
+
+
+
+insert into certificate (Employee_id, Course_Id)
+values(1,2);
+
+insert into certificate (Employee_id, Course_Id)
+values(2,4); 
+
+insert into certificate (Employee_id, Course_Id)
+values(3,5);
+
+insert into certificate (Employee_id, Course_Id)
+values(4,3);
+
+insert into certificate (Employee_id, Course_Id)
+values(5,1);
+
+
+
+
+------------------------------ ----------------------------------- ----------------------------- ----------------------------------- ----------------------------- -----------------
+
+
+
+-- Question 2. Downlaod the Projectdata.SQL and run it in MySQL. Now, write a query that deletes 
+-- duplicated rows. You need to keep only one of the duplicated rows. 
+
+
+use projectq2;
+
+select * from contacts ;
+
+
+set sql_safe_updates = 0 ;
+
+
+start transaction ;
+
+DELETE c1 FROM contacts c1
+INNER JOIN contacts c2 
+WHERE 
+    c1.id < c2.id AND 
+    c1.First_name = c2.First_name and 
+	c1.Last_name = c2.Last_name;
+
+
+select * from contacts;
+rollback ; 
+
+
+
+
+
+---------------------------------------------------------------- -------------------------------------------------- --------------------------------------------------------
+ 
+				
+
+
+-- Q3 
+
+
+use world;
+
+
+-- A ) the most populated city in each country
+
+select * from city c
+where (countrycode, population) in (select countrycode,max(population) from city group by countrycode );
+            
+
+-- B)  the second most populated city in each country. 
+
+
+
+select name, max(population) as 'Highest', countrycode
+ from city 
+where population not in (select max(population) from city 
+							group by countrycode)
+group by countrycode
+order by population desc; 
+
+
+
+
+
+
+-- c) the most populated city in each continent. 
+
+
+select c.name, cn.name, cn.continent, c.population from city c 
+left join country cn 
+on c.countrycode = cn.code
+where c.population in ( select max(c.population) from city  c inner join country cn 
+								on c.countrycode= cn.code
+                                group by continent);
+
+
+
+
+
+
+-- d) the most populated country in each continent. 
+
+
+
+select code,  population, continent from country 
+where ( population) in  (select max(population) 
+                                              from country
+                                            where population <> 0    
+								group by continent) ;
+                                
+                                
+                                
+                                
+
+
+
+
+-- E) the most populated continent. 
+
+
+
+select continent ,
+sum(population) from country cn 
+group by continent
+order by (sum(population)) desc
+limit 1;
+
+										
+
+
+-- f) the number of people speaking each language. 
+
+
+select distinct l.language , sum((l.percentage* cn.population)/ 100) as 'Splan'
+from country cn inner join countrylanguage l	
+on cn.code= l.countrycode
+group by l.language ;
+
+
+
+
+-- g) the most spoken language in each continent. 
+ 
+ 
+ 
+ 
+ drop view if exists Colang;
+ create view colang as
+
+ select  l.language, continent, sum((percentage * population) / 100 ) as Mostcommon
+ from country cn inner join countrylanguage l
+ on cn.code = l.countrycode
+ where Percentage <> 0
+ group by continent, language
+ order by mostcommon desc;
+ 
+
+select continent , language, max(mostcommon )
+from colang 
+group by continent;
+
+
+ -- Another Solution :
+ 
+SELECT Language, Continent, MAX(speakers) FROM (
+    SELECT Language, Continent, SUM(Population * Percentage / 100) AS speakers FROM country
+        INNER JOIN countrylanguage AS l
+        ON l.CountryCode = country.Code
+        GROUP BY Language, Continent
+        ORDER BY speakers DESC ) sp
+        group by continent ;
+
+
+
+
+
+
+-- h) number of languages that they are official language of at least one country. 
+drop view if exists Oflang;
+create view Oflang as
+select count(language) as Total, language from countrylanguage cl 
+inner join country c 
+on c.code = cl.countrycode
+where IsOfficial = 'T' 
+ and cl.percentage <> 0.0
+group by language;
+
+select count(total) from oflang;
+
+-- if the percentage = 0 is accepted; then the answer will be 102 .
+
+
+
+
+
+
+
+
+
+-- i) the most spoken official language based on each continent. (the language that has the highest 
+-- number of people talking as their mother tongue) 
+
+
+SELECT Language, Continent, MAX(speakers) FROM (
+    SELECT Language, Continent, SUM(Population * Percentage / 100) AS speakers FROM country
+        INNER JOIN countrylanguage AS l
+        ON l.CountryCode = country.Code
+        WHERE IsOfficial = 'T'
+        and percentage <> 0
+        GROUP BY Language, Continent
+        ORDER BY speakers DESC
+) AS t
+GROUP BY Continent;
+
+
+-- j) the country with the most (number of) unofficial languages based on each continent. (no matter 
+-- how many people talking that language) 
+
+select  humax.name, continent , max(humax.counter) from (
+select countrycode, name, continent , count(*) as counter 
+from countrylanguage cl inner join country c	
+on c.code= cl.countrycode 
+where isofficial = 'F' 
+group by countrycode 
+order by counter desc) as humax 
+group by continent; 
+ 
+
+
+-- Another Solution :
+
+drop view if exists Unnoffi;
+create view Unnoffi as
+
+select name, countrycode, count(l.language) as 'unlang', continent
+from country c inner join countrylanguage l
+on c.code = l.countrycode
+where l.isofficial = 'F' 
+group by  countrycode
+order by unlang desc;
+
+select  name, continent, max(unlang) totunlang , unlang from unnoffi
+group by continent ;
+
+
+
+
+
+
+
+-- k) the countries that their capital is not the most populated city in the country. 
+
+SELECT country.Name, C.Name, capital, ID, MAX(C.Population) FROM (
+    SELECT * FROM city ORDER BY Population DESC) as C
+INNER JOIN country ON country.Code = C.CountryCode
+GROUP BY CountryCode
+HAVING capital <> C.ID;
+
+
+  
+
+
+
+
+
+-- l) the countries with population smaller than Russia but bigger than Denmark. 
+
+select cn.name, cn.population
+from country cn 
+where cn.population  < ( select population from country where name = 'Russian Federation') 
+and cn.population > ( select population from country cn where name = 'Denmark')
+group by name;
+
+
+-- Another solution :
+
+SELECT country.Name FROM country
+JOIN country AS russia ON russia.Code = "RUS"
+JOIN country AS denmark ON denmark.code = "DNK"
+WHERE country.population < russia.population AND country.population > denmark.population;
+
